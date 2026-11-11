@@ -11,6 +11,8 @@ import LiveInterview from "./pages/LiveInterview";
 import Results from "./pages/Results";
 import Progress from "./pages/Progress";
 import Leaderboard from "./pages/Leaderboard";
+import MyResumes from "./pages/MyResumes";
+import Settings from "./pages/Settings";
 
 
 export default function App() {
@@ -21,18 +23,17 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          
 
-          <Route element={<AppLayout />}>
-            <Route path="/dashboard" element={<ComingSoon title="Dashboard" />} />
-            <Route path="/resumes" element={<ComingSoon title="My Resumes" />} />
-            <Route path="/progress" element={<ComingSoon title="Progress" />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
-            <Route path="/settings" element={<ComingSoon title="Settings" />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/results/:id" element={<Results />} />
-            <Route path="/interview/setup" element={<InterviewSetup />} />
-            <Route path="/progress" element={<Progress />} />
-          </Route>
+         <Route element={<AppLayout />}>
+  <Route path="/dashboard" element={<Dashboard />} />
+  <Route path="/interview/setup" element={<InterviewSetup />} />
+  <Route path="/results/:id" element={<Results />} />
+  <Route path="/progress" element={<Progress />} />
+  <Route path="/leaderboard" element={<Leaderboard />} />
+  <Route path="/resumes" element={<MyResumes />} />
+  <Route path="/settings" element={<Settings />} />
+</Route>
 
           <Route element={<FocusLayout />}>
             <Route path="/interview/:sessionId" element={<LiveInterview />} />
