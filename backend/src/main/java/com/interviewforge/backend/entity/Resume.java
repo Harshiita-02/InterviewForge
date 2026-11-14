@@ -24,6 +24,14 @@ public class Resume {
     @Column(name = "file_path", nullable = false, length = 500)
     private String filePath;
 
+    // the original file name shown to the user
+    @Column(name = "file_name", length = 255)
+    private String fileName;
+
+    @Column(name = "file_size")
+    private Long fileSize;
+
+    // text read from the PDF; used to personalise interview questions
     @Column(name = "parsed_skills", columnDefinition = "TEXT")
     private String parsedSkills;
 

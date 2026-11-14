@@ -1,8 +1,10 @@
 package com.interviewforge.backend.controller;
 
+import com.interviewforge.backend.dtos.user.PasswordChangeRequest;
 import com.interviewforge.backend.dtos.user.UserResponse;
-import com.interviewforge.backend.dtos.user.UserSignupRequest;
+import com.interviewforge.backend.dtos.user.UserUpdateRequest;
 import com.interviewforge.backend.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -14,13 +16,19 @@ public class UserController {
 
     private final UserService userService;
 
-    @PostMapping("/signup")
-    public ResponseEntity<UserResponse> signup(@RequestBody UserSignupRequest request) {
-        return ResponseEntity.ok(userService.signup(request));
+    @GetMapping("/me")
+    public ResponseEntity<UserResponse> getMe() {
+        return ResponseEntity.ok(userService.getCurrent());
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserResponse> getById(@PathVariable Long id) {
-        return ResponseEntity.ok(userService.getById(id));
+    @PutMapping("/me")
+    public ResponseEntity<UserResponse> updateMe(@Valid @RequestBody UserUpdateRequest request) {
+        return ResponseEntity.ok(userService.updateProfile(request));
+    }
+
+    @PutMapping("/me/password")
+    public ResponseEntity<Void> changePassword(@Valid @RequestBody PasswordChangeRequest request) {
+        userService.changePassword(request);
+        return ResponseEntity.noContent().build();
     }
 }

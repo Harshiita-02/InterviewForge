@@ -1,12 +1,22 @@
 package com.interviewforge.backend.service.impl;
 
-import com.interviewforge.backend.exception.ResourceNotFoundException;
 import com.interviewforge.backend.dtos.session.SessionCreateRequest;
 import com.interviewforge.backend.dtos.session.SessionResponse;
-import com.interviewforge.backend.entity.*;
+import com.interviewforge.backend.entity.CompanyTemplate;
+import com.interviewforge.backend.entity.InterviewSession;
+import com.interviewforge.backend.entity.Resume;
+import com.interviewforge.backend.entity.Topic;
+import com.interviewforge.backend.entity.User;
 import com.interviewforge.backend.entity.enums.SessionStatus;
+import com.interviewforge.backend.exception.ResourceNotFoundException;
 import com.interviewforge.backend.mapper.SessionMapper;
-import com.interviewforge.backend.repository.*;
+import com.interviewforge.backend.repository.CompanyTemplateRepository;
+import com.interviewforge.backend.repository.InterviewSessionRepository;
+import com.interviewforge.backend.repository.ResumeRepository;
+import com.interviewforge.backend.repository.TopicRepository;
+import com.interviewforge.backend.repository.UserRepository;
+import com.interviewforge.backend.security.CurrentUser;
+import com.interviewforge.backend.security.SessionAccess;
 import com.interviewforge.backend.service.InterviewSessionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -26,12 +36,15 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
     private final UserRepository userRepository;
     private final CompanyTemplateRepository companyTemplateRepository;
     private final TopicRepository topicRepository;
+    private final ResumeRepository resumeRepository;
     private final SessionMapper sessionMapper;
+    private final CurrentUser currentUser;
+    private final SessionAccess sessionAccess;
 
     @Override
     @Transactional
     public SessionResponse create(SessionCreateRequest request) {
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findById(currentUser.id())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found"));
 
         CompanyTemplate template = null;
@@ -40,15 +53,22 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
                     .orElseThrow(() -> new ResourceNotFoundException("Company template not found"));
         }
 
-        Set<Topic> topics = new HashSet<>(topicRepository.findAllById(request.topicIds()));
+        // The resume must belong to the logged-in user
+        Resume resume = null;
+        if (request.resumeId() != null) {
+            resume = resumeRepository.findById(request.resumeId())
+                    .filter(r -> r.getUser().getId().equals(user.getId()))
+                    .orElseThrow(() -> new ResourceNotFoundException("Resume not found"));
+        }
 
         InterviewSession session = InterviewSession.builder()
                 .user(user)
                 .companyTemplate(template)
-                .role(request.role())
+                .resume(resume)
+                .role(request.role().trim())
                 .interviewType(request.interviewType())
                 .difficulty(request.difficulty())
-                .topics(topics)
+                .topics(resolveTopics(request.topics()))
                 .build();
 
         InterviewSession saved = sessionRepository.save(session);
@@ -58,15 +78,13 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
     @Override
     @Transactional(readOnly = true)
     public SessionResponse getById(Long id) {
-        InterviewSession session = sessionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-        return sessionMapper.toResponse(session);
+        return sessionMapper.toResponse(sessionAccess.requireOwned(id));
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<SessionResponse> getByUserId(Long userId) {
-        return sessionRepository.findByUserIdOrderByStartedAtDesc(userId).stream()
+    public List<SessionResponse> getMine() {
+        return sessionRepository.findByUserIdOrderByStartedAtDesc(currentUser.id()).stream()
                 .map(sessionMapper::toResponse)
                 .collect(Collectors.toList());
     }
@@ -74,12 +92,31 @@ public class InterviewSessionServiceImpl implements InterviewSessionService {
     @Override
     @Transactional
     public SessionResponse endSession(Long id) {
-        InterviewSession session = sessionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Session not found"));
-
+        InterviewSession session = sessionAccess.requireOwned(id);
         session.setStatus(SessionStatus.COMPLETED);
         session.setEndedAt(LocalDateTime.now());
-
         return sessionMapper.toResponse(session);
+    }
+
+    // Finds each topic by name, creating it (as a custom topic) when it doesn't exist yet
+    private Set<Topic> resolveTopics(List<String> names) {
+        Set<Topic> topics = new HashSet<>();
+        if (names == null) {
+            return topics;
+        }
+
+        for (String raw : names) {
+            if (raw == null || raw.isBlank()) {
+                continue;
+            }
+            String trimmed = raw.trim();
+            String name = trimmed.length() > 100 ? trimmed.substring(0, 100) : trimmed;
+
+            Topic topic = topicRepository.findByName(name)
+                    .orElseGet(() -> topicRepository.save(
+                            Topic.builder().name(name).isPredefined(false).build()));
+            topics.add(topic);
+        }
+        return topics;
     }
 }

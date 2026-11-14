@@ -35,4 +35,8 @@ public class Question {
     @Enumerated(EnumType.STRING)
     @Column(name = "generated_by", nullable = false, length = 20)
     private QuestionSource generatedBy;
+
+    // true when this question digs deeper into the candidate's previous answer
+    @Column(name = "follow_up", nullable = false)
+    private boolean followUp;
 }

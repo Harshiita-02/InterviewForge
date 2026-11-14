@@ -16,16 +16,19 @@ public class ResumeController {
 
     private final ResumeService resumeService;
 
-    @PostMapping(value = "/upload", consumes = "multipart/form-data")
-    public ResponseEntity<ResumeResponse> upload(
-            @RequestParam("userId") Long userId,
-            @RequestParam("file") MultipartFile file
-    ) {
-        return ResponseEntity.ok(resumeService.upload(userId, file));
+    @PostMapping(consumes = "multipart/form-data")
+    public ResponseEntity<ResumeResponse> upload(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(resumeService.upload(file));
     }
 
-    @GetMapping("/user/{userId}")
-    public ResponseEntity<List<ResumeResponse>> getByUserId(@PathVariable Long userId) {
-        return ResponseEntity.ok(resumeService.getByUserId(userId));
+    @GetMapping
+    public ResponseEntity<List<ResumeResponse>> getMine() {
+        return ResponseEntity.ok(resumeService.getMine());
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        resumeService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }

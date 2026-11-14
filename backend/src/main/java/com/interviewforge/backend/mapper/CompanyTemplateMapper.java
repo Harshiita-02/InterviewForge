@@ -5,6 +5,7 @@ import com.interviewforge.backend.dtos.template.CompanyTemplateSummary;
 import com.interviewforge.backend.entity.CompanyTemplate;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -15,16 +16,21 @@ public class CompanyTemplateMapper {
                 template.getId(),
                 template.getCompanyName(),
                 template.getDescription(),
-                template.getTopics().stream()
-                        .map(topic -> topic.getName())
-                        .collect(Collectors.toList())
+                topicNames(template)
         );
     }
 
     public CompanyTemplateSummary toSummary(CompanyTemplate template) {
         return new CompanyTemplateSummary(
                 template.getId(),
-                template.getCompanyName()
+                template.getCompanyName(),
+                topicNames(template)
         );
+    }
+
+    private List<String> topicNames(CompanyTemplate template) {
+        return template.getTopics().stream()
+                .map(topic -> topic.getName())
+                .collect(Collectors.toList());
     }
 }

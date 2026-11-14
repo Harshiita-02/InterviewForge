@@ -1,5 +1,6 @@
 package com.interviewforge.backend.mapper;
 
+import com.interviewforge.backend.dtos.user.UserResponse;
 import com.interviewforge.backend.entity.User;
 import org.springframework.stereotype.Component;
 

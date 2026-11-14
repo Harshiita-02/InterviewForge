@@ -31,6 +31,11 @@ public class InterviewSession {
     @JoinColumn(name = "company_template_id", nullable = true)
     private CompanyTemplate companyTemplate;
 
+    // optional: the resume this interview should be based on
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resume_id", nullable = true)
+    private Resume resume;
+
     @Column(nullable = false, length = 100)
     private String role;
 

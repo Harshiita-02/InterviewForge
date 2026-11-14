@@ -1,3 +1,5 @@
 package com.interviewforge.backend.dtos.auth;
 
-public record LoginResponse(String token, Long userId, String name) {}
+import com.interviewforge.backend.dtos.user.UserResponse;
+
+public record LoginResponse(String token, UserResponse user) {}
