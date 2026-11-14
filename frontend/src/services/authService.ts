@@ -1,22 +1,14 @@
+import { apiFetch } from "../lib/apiClient";
+
 export interface SignupRequest {
   fullName: string;
   email: string;
   password: string;
 }
 
-export interface SignupResponse {
-  token: string;
-  user: { id: number; fullName: string; email: string };
-}
-
 export interface LoginRequest {
   email: string;
   password: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  user: { id: number; email: string };
 }
 
 export interface CurrentUser {
@@ -25,27 +17,47 @@ export interface CurrentUser {
   email: string;
 }
 
-export async function mockLogin(req: LoginRequest): Promise<LoginResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  return {
-    token: "mock-jwt-token",
-    user: { id: 1, email: req.email },
-  };
+export interface LoginResult {
+  token: string;
+  user: CurrentUser;
 }
 
-export async function mockSignup(req: SignupRequest): Promise<SignupResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  if (req.email === "taken@test.com") {
-    throw new Error("An account with this email already exists.");
-  }
+// The shapes the backend sends
+interface ApiUser {
+  id: number;
+  name: string;
+  email: string;
+  createdAt: string;
+}
 
-  return {
-    token: "mock-jwt-token",
-    user: { id: 2, fullName: req.fullName, email: req.email },
-  };
+interface ApiLoginResponse {
+  token: string;
+  user: ApiUser;
+}
+
+// The backend says "name"; the screens say "fullName"
+function toCurrentUser(user: ApiUser): CurrentUser {
+  return { id: user.id, fullName: user.name, email: user.email };
+}
+
+export async function login(req: LoginRequest): Promise<LoginResult> {
+  const res = await apiFetch<ApiLoginResponse>("/api/auth/login", {
+    method: "POST",
+    body: req,
+    auth: false,
+  });
+  return { token: res.token, user: toCurrentUser(res.user) };
+}
+
+export async function signup(req: SignupRequest): Promise<void> {
+  await apiFetch<ApiUser>("/api/auth/signup", {
+    method: "POST",
+    body: { name: req.fullName, email: req.email, password: req.password },
+    auth: false,
+  });
 }
 
 export async function getCurrentUser(): Promise<CurrentUser> {
-  await new Promise((resolve) => setTimeout(resolve, 200));
-  return { id: 1, fullName: "Harshita", email: "harshita@example.com" };
+  const user = await apiFetch<ApiUser>("/api/users/me");
+  return toCurrentUser(user);
 }

@@ -1,15 +1,10 @@
-import { useEffect, useState } from "react";
 import { Bell, Moon, Sun } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
-import { getCurrentUser, type CurrentUser } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function TopBar() {
   const { theme, toggleTheme } = useTheme();
-  const [user, setUser] = useState<CurrentUser | null>(null);
-
-  useEffect(() => {
-    getCurrentUser().then(setUser);
-  }, []);
+  const { user } = useAuth();
 
   const initial = user?.fullName.charAt(0).toUpperCase() ?? "";
   const iconBtn = "rounded-lg p-2 text-[var(--muted)] hover:bg-[var(--bg)]";

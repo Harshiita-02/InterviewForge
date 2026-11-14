@@ -11,7 +11,7 @@ export default function LeaderboardTable({ data }: { data: LeaderboardData }) {
         <LeaderboardRow
           key={entry.userId}
           rank={i + 1}
-          name={entry.userId === yourEntry.userId ? "Harshita" : entry.name}
+          name={entry.name}
           interviews={entry.interviews}
           averageScore={entry.averageScore}
           isYou={entry.userId === yourEntry.userId}
@@ -26,7 +26,7 @@ export default function LeaderboardTable({ data }: { data: LeaderboardData }) {
           </div>
           <LeaderboardRow
             rank={yourRank}
-            name="Harshita"
+            name={yourEntry.name}
             interviews={yourEntry.interviews}
             averageScore={yourEntry.averageScore}
             isYou

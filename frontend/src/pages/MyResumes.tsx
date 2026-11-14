@@ -60,14 +60,14 @@ export default function MyResumes() {
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [dragging, setDragging] = useState(false);
 
-  useEffect(() => {
-    getResumes().then((data) => {
-      setResumes(data);
-      setLoading(false);
-    });
+    useEffect(() => {
+    getResumes()
+      .then((data) => setResumes(data))
+      .catch(() => setError("Couldn't load your resumes. Please refresh."))
+      .finally(() => setLoading(false));
   }, []);
 
-  async function handleFile(file: File | undefined) {
+   async function handleFile(file: File | undefined) {
     if (!file) return;
     if (file.type !== "application/pdf") {
       setError("Choose a PDF file.");
@@ -78,14 +78,23 @@ export default function MyResumes() {
       return;
     }
     setError("");
-    const created = await uploadResume(file);
-    setResumes((prev) => [created, ...prev]);
+    try {
+      const created = await uploadResume(file);
+      setResumes((prev) => [created, ...prev]);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't upload that file. Try again.");
+    }
   }
 
-  async function handleDelete(id: number) {
-    await deleteResume(id);
-    setResumes((prev) => prev.filter((r) => r.id !== id));
-    setConfirmId(null);
+    async function handleDelete(id: number) {
+    try {
+      await deleteResume(id);
+      setResumes((prev) => prev.filter((r) => r.id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't delete that resume. Try again.");
+    } finally {
+      setConfirmId(null);
+    }
   }
 
   return (

@@ -1,10 +1,11 @@
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout, { authInputClass } from "../components/AuthLayout";
-import { mockLogin } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,8 +20,7 @@ export default function Login() {
     }
     setLoading(true);
     try {
-      const res = await mockLogin({ email, password });
-      localStorage.setItem("token", res.token);
+      await login(email.trim(), password);
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");

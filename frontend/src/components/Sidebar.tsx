@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from "react-router-dom";
 import { LayoutDashboard, FileText, TrendingUp, Trophy, Settings, LogOut } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 
 const links = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -10,10 +11,11 @@ const links = [
 ];
 
 export default function Sidebar() {
-  const navigate = useNavigate();
+    const navigate = useNavigate();
+  const { logout } = useAuth();
 
   function handleLogout() {
-    localStorage.removeItem("token");
+    logout();
     navigate("/login");
   }
 

@@ -1,10 +1,11 @@
 import { useState, type ChangeEvent, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import AuthLayout, { authInputClass } from "../components/AuthLayout";
-import { mockSignup } from "../services/authService";
+import { useAuth } from "../context/AuthContext";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { signup } = useAuth();
   const [form, setForm] = useState({
     fullName: "", email: "", password: "", confirmPassword: "",
   });
@@ -34,8 +35,7 @@ export default function Signup() {
     setLoading(true);
     try {
       const { fullName, email, password } = form;
-      const res = await mockSignup({ fullName, email, password });
-      localStorage.setItem("token", res.token);
+      await signup(fullName.trim(), email.trim(), password);
       navigate("/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong. Try again.");

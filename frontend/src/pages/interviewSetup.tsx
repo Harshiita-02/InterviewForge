@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import type { Difficulty, InterviewType, SetupOptions } from "../types/interview";
 import { createSession, getSetupOptions } from "../services/interviewService";
 import Field, { controlClass } from "../components/ui/Field";
@@ -28,19 +28,22 @@ const initialForm: SetupForm = {
 
 export default function InterviewSetup() {
   const navigate = useNavigate();
+    const location = useLocation();
+  // "Use in interview" on My Resumes sends the chosen resume along
+  const preselectedResumeId = (location.state as { resumeId?: number } | null)?.resumeId ?? null;
   const [options, setOptions] = useState<SetupOptions | null>(null);
   const [form, setForm] = useState<SetupForm>(initialForm);
   const [starting, setStarting] = useState(false);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+    useEffect(() => {
     getSetupOptions()
       .then((opts) => {
         setOptions(opts);
-        setForm((f) => ({ ...f, role: opts.roles[0] }));
+        setForm((f) => ({ ...f, role: opts.roles[0], resumeId: preselectedResumeId }));
       })
       .catch(() => setError("Couldn't load the setup options. Please refresh."));
-  }, []);
+  }, [preselectedResumeId]);
 
   if (!options) {
     return error
@@ -88,9 +91,9 @@ export default function InterviewSetup() {
         companyTemplateId: form.companyId,
       });
       navigate(`/interview/${sessionId}`);
-    } catch {
-      setError("Couldn't start the interview. Please try again.");
-    } finally {
+    }   catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't start the interview. Please try again."); 
+    }finally {
       setStarting(false);
     }
   }

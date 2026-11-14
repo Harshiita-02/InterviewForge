@@ -25,11 +25,22 @@ export default function LiveInterview() {
   useEffect(() => {
     getInterview(id)
       .then((res) => {
+        // No question means this interview is already finished
+        if (!res.question) {
+          navigate(`/results/${id}`, { replace: true });
+          return;
+        }
         setSession(res.session);
         setQuestion(res.question);
       })
-      .catch(() => setError("Couldn't load this interview. Please go back and try again."));
-  }, [id]);
+      .catch((err) =>
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Couldn't load this interview. Please go back and try again."
+        )
+      );
+  }, [id, navigate]);
 
   async function submit() {
     if (!question || submittingRef.current) return;
@@ -49,8 +60,10 @@ export default function LiveInterview() {
       } else {
         navigate(`/results/${id}`);
       }
-    } catch {
-      setError("Couldn't submit your answer. Please try again.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Couldn't submit your answer. Please try again."
+      );
     } finally {
       submittingRef.current = false;
       setSubmitting(false);
@@ -61,8 +74,12 @@ export default function LiveInterview() {
 
   async function handleEnd() {
     if (!window.confirm("End this interview now? Your answers so far will be scored.")) return;
-    await endInterview(id);
-    navigate(`/results/${id}`);
+    try {
+      await endInterview(id);
+      navigate(`/results/${id}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't end the interview. Please try again.");
+    }
   }
 
   if (!session || !question) {

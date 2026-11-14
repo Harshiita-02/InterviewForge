@@ -1,9 +1,7 @@
-import { useState } from "react";
 import { Mic, Square } from "lucide-react";
 import type { AnswerSource } from "../../types/interview";
 import SegmentedControl from "../ui/SegmentedControl";
-import { useAudioRecorder } from "../../hooks/useAudioRecorder";
-import { transcribeAudio } from "../../services/interviewService";
+import { useSpeechToText } from "../../hooks/useSpeechToText";
 
 const MODES: AnswerSource[] = ["TYPED", "VOICE"];
 
@@ -24,35 +22,28 @@ interface Props {
 
 export default function AnswerPanel(props: Props) {
   const { mode, onModeChange, answer, onAnswerChange, onSubmit, canSubmit, submitting, error } = props;
-  const { recording, error: micError, start, stop } = useAudioRecorder();
-  const [transcribing, setTranscribing] = useState(false);
-  const [voiceError, setVoiceError] = useState("");
+  const { listening, supported, error: voiceError, start, stop } = useSpeechToText(onAnswerChange);
 
-  async function handleMic() {
-    setVoiceError("");
-    if (!recording) {
-      await start();
-      return;
-    }
-    const audio = await stop();
-    if (!audio) return;
-    setTranscribing(true);
-    try {
-      onAnswerChange(await transcribeAudio(audio));
-    } catch {
-      setVoiceError("Couldn't transcribe that. Try again or type your answer.");
-    } finally {
-      setTranscribing(false);
+  function handleMic() {
+    if (listening) {
+      stop();
+    } else {
+      start(answer);
     }
   }
 
-  const micLabel = transcribing
-    ? "Transcribing…"
-    : recording
-      ? "Recording… tap to stop"
-      : "Tap to record your answer";
+  function handleModeChange(next: AnswerSource) {
+    if (listening) stop();
+    onModeChange(next);
+  }
 
-  const shownError = error || voiceError || micError;
+  const micLabel = listening
+    ? "Listening… tap to stop"
+    : supported
+      ? "Tap to start speaking"
+      : "Voice isn't supported in this browser";
+
+  const shownError = error || voiceError;
 
   return (
     <div className="flex flex-col gap-3.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] p-4">
@@ -60,7 +51,7 @@ export default function AnswerPanel(props: Props) {
         compact
         options={MODES}
         value={mode}
-        onChange={onModeChange}
+        onChange={handleModeChange}
         getLabel={(m) => (m === "TYPED" ? "Type" : "Voice")}
       />
 
@@ -78,11 +69,11 @@ export default function AnswerPanel(props: Props) {
             <button
               type="button"
               onClick={handleMic}
-              disabled={transcribing}
-              aria-label={recording ? "Stop recording" : "Start recording"}
+              disabled={!supported}
+              aria-label={listening ? "Stop listening" : "Start listening"}
               className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--accent)] text-white disabled:opacity-50"
             >
-              {recording ? <Square size={22} fill="currentColor" /> : <Mic size={24} />}
+              {listening ? <Square size={22} fill="currentColor" /> : <Mic size={24} />}
             </button>
             <span className="text-xs text-[var(--muted)]">{micLabel}</span>
           </div>
@@ -106,7 +97,7 @@ export default function AnswerPanel(props: Props) {
         <button
           type="button"
           onClick={onSubmit}
-          disabled={!canSubmit || recording || transcribing}
+          disabled={!canSubmit || listening}
           className="h-[38px] shrink-0 rounded-lg bg-[var(--accent)] px-[18px] text-[13px] font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {submitting ? "Submitting…" : "Submit answer"}

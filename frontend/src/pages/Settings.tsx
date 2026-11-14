@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { useTheme } from "../context/ThemeContext";
 import { changePassword, getProfile, updateProfile } from "../services/settingsService";
+import { useAuth } from "../context/AuthContext";
 
 type Mode = "light" | "dark";
 
@@ -18,6 +19,7 @@ export default function Settings() {
     setTheme?: (mode: Mode) => void;
     toggleTheme?: () => void;
   };
+    const { updateUser } = useAuth();
 
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -43,7 +45,7 @@ export default function Settings() {
     else themeCtx.toggleTheme?.();
   }
 
-  async function handleProfileSave(e: FormEvent) {
+    async function handleProfileSave(e: FormEvent) {
     e.preventDefault();
     setProfileMsg("");
     if (!fullName.trim()) {
@@ -51,9 +53,14 @@ export default function Settings() {
       return;
     }
     setProfileError("");
-    await updateProfile(fullName.trim());
-    setProfileMsg("Saved");
-    setTimeout(() => setProfileMsg(""), 2500);
+    try {
+      const saved = await updateProfile(fullName.trim());
+      updateUser({ fullName: saved.fullName });   // the top bar changes right away
+      setProfileMsg("Saved");
+      setTimeout(() => setProfileMsg(""), 2500);
+    } catch (err) {
+      setProfileError(err instanceof Error ? err.message : "Couldn't save your changes.");
+    }
   }
 
   async function handlePasswordChange(e: FormEvent) {
